@@ -1,53 +1,66 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import TodoForm from "./components/todoForm";
+import TodoListBox from "./components/todoListBox";
+import EditTodoForm from "./components/editTodoForm";
+import uuid from "react-uuid";
 
 const App = () => {
-  const [input, setInput] = useState("");
   const [list, setList] = useState([]);
 
-  const handleChange = (e) => {
-    setInput(e.target.value);
+  const addList = (value) => {
+    const newList = [
+      ...list,
+      {
+        id: uuid(),
+        name: value,
+        editable: false,
+        completed: false,
+      },
+    ];
+
+    setList(newList);
+    localStorage.setItem("list", JSON.stringify(newList));
   };
 
-  const submitForm = (e) => {
-    if (input === "") return;
+  useEffect(() => {
+    const savedList = JSON.parse(localStorage.getItem("list")) || [];
+    setList(savedList);
+  }, []);
 
-    e.preventDefault();
-    const newList = {
-      id: Math.floor(Math.random() * 100) + 1,
-      name: input,
-    };
-    setList((state) => [...state, newList]);
-    setInput("");
-  };
-
-  const handlerRemove = (id) => {
+  const deleteList = (id) => {
     const newList = list.filter((li) => li.id !== id);
     setList(newList);
+    localStorage.setItem("list", JSON.stringify(newList));
   };
 
-  const data = () => {
-    if (list.length === 0) return <h1>kosong</h1>;
+  const editList = (id, value) => {
+    const newList = list.map((li) => (li.id === id ? { ...li, editable: !li.editable, name: value } : li));
+    setList(newList);
+    localStorage.setItem("list", JSON.stringify(newList));
+  };
 
-    return list.map((res, i) => (
-      <div className="border justify-between flex w-full max-w-xs my-2 px-3">
-        <h1 className="my-2">{res.name}</h1>
-        <button type="button" onClick={() => handlerRemove(res.id)}>
-          ❌
-        </button>
-      </div>
-    ));
+  const changeEditable = (id) => {
+    const newList = list.map((li) => (li.id === id ? { ...li, editable: !li.editable } : li));
+    setList(newList);
+    localStorage.setItem("list", JSON.stringify(newList));
+  };
+
+  const changeCompleted = (id) => {
+    const newList = list.map((li) => (li.id === id ? { ...li, completed: !li.completed } : li));
+    setList(newList);
+    localStorage.setItem("list", JSON.stringify(newList));
   };
 
   return (
-    <div className="container flex-col flex justify-center items-center ">
-      <form action="todo-list" onSubmit={submitForm}>
-        <input type="text" value={input} onChange={(e) => handleChange(e)} placeholder="Masukkan Todo List" className="border m-4" />
-        <button type="submit" className="border bg-blue-700">
-          Input
-        </button>
-      </form>
-      {data()}
-    </div>
+    <section className="h-screen bg-gradient-to-br from-emerald-300 via-emerald-500 to-emerald-700">
+      <div className="container  max-w-5xl flex justify-center mx-auto">
+        <div className="bg-emerald-950 w-full max-w-[500px] shadow-2xl shadow-emerald-900 p-4 py-6 my-10 rounded-lg mx-2 sm:mx-0">
+          <h1 className="text-4xl text-white font-bold text-center pb-4">Add Your List </h1>
+          <TodoForm addList={addList} />
+          {list.map((li) => (!li.editable ? <TodoListBox list={li} deleteList={deleteList} changeEditable={changeEditable} changeCompleted={changeCompleted} /> : <EditTodoForm list={li} editList={editList} />))}
+        </div>
+      </div>
+    </section>
   );
 };
 
